@@ -99,8 +99,8 @@
                     </svg>
                 </div>
                 <div class="admin-info">
-                    <div class="admin-name" id="sidebar-admin-name">Admin User</div>
-                    <div class="admin-role" id="sidebar-admin-role">Admin</div>
+                    <div class="admin-name" id="sidebar-admin-name">Guest User</div>
+                    <div class="admin-role" id="sidebar-admin-role">Not Configured</div>
                 </div>
             </div>
         </aside>
@@ -123,6 +123,11 @@
                         </svg>
                         <span id="current-date">--</span>
                         <span id="current-time">--</span>
+                    </div>
+
+                    <!-- Top Header Auth Display (Right of Date & Time) -->
+                    <div id="header-auth-area" class="header-auth-area">
+                        <!-- Rendered dynamically: Sign In button or Admin Name + Email Badge + Logout -->
                     </div>
                 </div>
             </header>
@@ -298,7 +303,10 @@
 
                     <div class="dual-panel-grid">
                         <div class="panel-card inner-card">
-                            <h3>Current Active Alerts</h3>
+                            <div class="flex-row justify-between align-center mb-12">
+                                <h3>Current Active Alerts</h3>
+                                <button type="button" id="btn-clear-active-alerts" class="action-btn red-btn text-xs" style="padding: 4px 10px;">Clear All Alerts</button>
+                            </div>
                             <div class="history-list mt-12" id="current-active-alerts-list">
                                 <!-- Populated dynamically when anomaly occurs -->
                             </div>
@@ -545,43 +553,50 @@
             <!-- TAB 7: SETTINGS -->
             <div id="tab-settings" class="tab-content">
                 <div class="panel-card full-tab">
-                    <h2>General Settings</h2>
-                    <p class="text-muted mb-20">Configure basic application settings, company profile, and admin account
-                        details.</p>
+                    <div class="panel-header mb-16">
+                        <div>
+                            <h2>General Settings</h2>
+                            <p class="text-muted">Configure application settings, company profile, and active user details.</p>
+                        </div>
+                        <span id="settings-status-badge" class="pill-badge yellow">Unsaved / Not Configured</span>
+                    </div>
+
+                    <div id="settings-privacy-notice" class="settings-status-banner mb-20">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="notice-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span><strong>Privacy Protection Active:</strong> Shared machine environment. Saved credentials are protected and will not be displayed on screen or sidebar until entered and saved for your session.</span>
+                    </div>
 
                     <form id="form-settings" class="settings-form" novalidate>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label>Admin Name</label>
-                                <input type="text" id="set-admin-name" value="Admin User" required class="dark-input">
+                                <label>Admin / User Name</label>
+                                <input type="text" id="set-admin-name" placeholder="Enter Full Name (e.g. Sasipriya)" required class="dark-input">
                             </div>
                             <div class="form-group">
-                                <label>Admin Number</label>
-                                <input type="text" id="set-admin-number" value="+1 (555) 019-2834" required
-                                    class="dark-input">
+                                <label>Phone Number</label>
+                                <input type="text" id="set-admin-number" placeholder="XXXXXXXXXX" required class="dark-input">
                             </div>
                             <div class="form-group">
-                                <label>Admin Email Address</label>
-                                <input type="email" id="set-admin-email" value="admin@factory.ai" required
-                                    class="dark-input">
+                                <label>Email Address</label>
+                                <input type="email" id="set-admin-email" placeholder="Enter Email (e.g. sasi@factory.ai)" required class="dark-input">
                             </div>
                             <div class="form-group">
                                 <label>Company Name</label>
-                                <input type="text" id="set-company-name" value="Siemens Industrial Park"
-                                    class="dark-input">
+                                <input type="text" id="set-company-name" placeholder="Enter Company Name" class="dark-input">
                             </div>
                             <div class="form-group">
-                                <label>Block Name</label>
-                                <input type="text" id="set-block-name" value="Block B-07" class="dark-input">
+                                <label>Block / Department</label>
+                                <input type="text" id="set-block-name" placeholder="Enter Block or Department Name" class="dark-input">
                             </div>
                             <div class="form-group">
                                 <label>User System Role</label>
-                                <input type="text" id="set-user-role" placeholder="Enter System Role (e.g. Admin, Lead Engineer)" value="Admin" class="dark-input">
+                                <input type="text" id="set-user-role" placeholder="Enter Role (e.g. Machine Engineer, Admin, Operator)" class="dark-input">
                             </div>
                         </div>
 
                         <div class="flex-row gap-16 mt-20">
                             <button type="submit" class="action-btn green-btn">Save Settings</button>
+                            <button type="button" id="btn-settings-logout" class="action-btn red-btn">Logout</button>
                         </div>
                     </form>
                 </div>
@@ -662,10 +677,42 @@
         </div>
     </div>
 
-
-
-
-
+    <!-- MODAL 3: User Sign In -->
+    <div id="modal-signin" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Sign In to Predictive Maintenance AI</h3>
+                <button class="modal-close" data-close="modal-signin">✕</button>
+            </div>
+            <form id="form-signin">
+                <p class="text-muted text-sm mb-16">Enter your Admin Name and registered Email Address to access your workspace.</p>
+                <div class="form-group">
+                    <label>Admin / User Name</label>
+                    <input type="text" id="signin-name" placeholder="e.g. Sasipriya" required class="dark-input">
+                </div>
+                <div class="form-group mt-12">
+                    <label>Email Address</label>
+                    <input type="email" id="signin-email" placeholder="e.g. sasipriyakatta59@gmail.com" required class="dark-input">
+                </div>
+                <div class="form-group mt-12">
+                    <label>Mobile Number</label>
+                    <input type="text" id="signin-number" placeholder="XXXXXXXXXX" class="dark-input">
+                </div>
+                <div class="form-group mt-12">
+                    <label>System Role</label>
+                    <select id="signin-role" class="dark-select full-width">
+                        <option value="Machine Engineer">Machine Engineer</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Operator">Operator</option>
+                    </select>
+                </div>
+                <div class="modal-actions mt-20">
+                    <button type="button" class="action-btn gray-btn" data-close="modal-signin">Cancel</button>
+                    <button type="submit" class="action-btn green-btn">Sign In & Access Workspace</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>

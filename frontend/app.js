@@ -5,29 +5,176 @@
 let ws = null;
 let machineInventory = [];
 let activeMachine = { id: "MCH-07", name: "CNC Milling Machine - 07", condition: "Old Machine", type: "CNC Mill" };
-let isAuthenticated = true;
+let isAuthenticated = false;
+let currentUser = null;
 let lastTelemetryTickTime = "--:--:--";
 let currentUserRole = "Admin";
+
+function initAuthSession() {
+    const storedSession = localStorage.getItem("pm_user_session");
+    if (storedSession) {
+        try {
+            currentUser = JSON.parse(storedSession);
+            isAuthenticated = true;
+            localStorage.setItem("pm_settings_configured", "true");
+        } catch (e) {
+            currentUser = null;
+            isAuthenticated = false;
+        }
+    } else {
+        currentUser = null;
+        isAuthenticated = false;
+    }
+}
+
+function updateHeaderAuthDisplay() {
+    const container = document.getElementById("header-auth-area");
+    if (!container) return;
+
+    if (isAuthenticated && currentUser) {
+        container.innerHTML = `
+            <div class="header-user-badge">
+                <div class="header-user-details">
+                    <span class="header-user-name">${currentUser.name || "Admin User"}</span>
+                    <span class="header-user-email">${currentUser.email || "admin@factory.ai"}</span>
+                </div>
+                <button type="button" class="header-logout-btn" id="btn-header-logout" title="Sign Out">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        `;
+        document.getElementById("btn-header-logout")?.addEventListener("click", logoutUser);
+    } else {
+        container.innerHTML = `
+            <button type="button" class="action-btn green-btn text-xs" id="btn-header-signin" style="padding: 6px 16px;">
+                Sign In
+            </button>
+        `;
+        document.getElementById("btn-header-signin")?.addEventListener("click", () => openModal("modal-signin"));
+    }
+}
+window.updateHeaderAuthDisplay = updateHeaderAuthDisplay;
+
+async function signInUser(name, email, role, number) {
+    if (!name || !email) {
+        showToast("Please enter your Admin Name and Email Address.");
+        return;
+    }
+
+    currentUser = {
+        name: name,
+        email: email,
+        role: role || "Machine Engineer",
+        number: number || "XXXXXXXXXX"
+    };
+
+    isAuthenticated = true;
+    localStorage.setItem("pm_user_session", JSON.stringify(currentUser));
+    localStorage.setItem("pm_settings_configured", "true");
+
+    try {
+        await fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                admin_name: currentUser.name,
+                admin_number: currentUser.number,
+                admin_email: currentUser.email,
+                company_name: "Industrial Plant",
+                block_name: "Block A-01",
+                theme: "light",
+                role: currentUser.role
+            })
+        });
+    } catch (e) {
+        console.error("Backend settings sync error:", e);
+    }
+
+    updateHeaderAuthDisplay();
+    updateAdminProfileDisplay(currentUser.name, currentUser.role);
+    applyUserRole(currentUser.role);
+
+    // Auto populate settings inputs
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    setVal("set-admin-name", currentUser.name);
+    setVal("set-admin-email", currentUser.email);
+    setVal("set-admin-number", currentUser.number);
+    setVal("set-user-role", currentUser.role);
+
+    const badge = document.getElementById("settings-status-badge");
+    if (badge) {
+        badge.textContent = "Configured & Active";
+        badge.className = "pill-badge green";
+    }
+
+    closeModal("modal-signin");
+    showToast(`Signed in successfully as ${currentUser.name}.`);
+}
+window.signInUser = signInUser;
+
+function logoutUser() {
+    localStorage.removeItem("pm_user_session");
+    localStorage.removeItem("pm_settings_configured");
+    currentUser = null;
+    isAuthenticated = false;
+
+    updateHeaderAuthDisplay();
+    updateAdminProfileDisplay("Guest User", "Not Configured");
+    applyUserRole("Admin");
+
+    // Clear settings form inputs
+    const fields = ["set-admin-name", "set-admin-number", "set-admin-email", "set-company-name", "set-block-name", "set-user-role"];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+
+    const badge = document.getElementById("settings-status-badge");
+    if (badge) {
+        badge.textContent = "Unsaved / Not Configured";
+        badge.className = "pill-badge yellow";
+    }
+
+    showToast("Logged out successfully.");
+    openModal("modal-signin");
+}
+window.logoutUser = logoutUser;
 
 function updateAdminProfileDisplay(adminName, adminRole) {
     const nameElem = document.getElementById("sidebar-admin-name");
     const roleElem = document.getElementById("sidebar-admin-role");
-    if (nameElem) nameElem.textContent = adminName || "Admin User";
-    if (roleElem) roleElem.textContent = adminRole || "Admin";
+    const isConfigured = localStorage.getItem("pm_settings_configured") === "true";
+
+    if (!isConfigured || !isAuthenticated) {
+        if (nameElem) nameElem.textContent = "Guest User";
+        if (roleElem) roleElem.textContent = "Not Configured";
+        return;
+    }
+
+    const dispName = currentUser ? currentUser.name : adminName;
+    const dispRole = currentUser ? currentUser.role : adminRole;
+
+    if (nameElem) nameElem.textContent = dispName || "Guest User";
+    if (roleElem) roleElem.textContent = dispRole || "Not Configured";
 }
 window.updateAdminProfileDisplay = updateAdminProfileDisplay;
 
 function applyUserRole(role) {
-    currentUserRole = (role !== undefined && role !== null) ? role : "Admin";
+    currentUserRole = (role !== undefined && role !== null && role !== "") ? role : "Admin";
 
+    const isConfigured = localStorage.getItem("pm_settings_configured") === "true";
     const roleInput = document.getElementById("set-user-role");
 
-    if (roleInput && document.activeElement !== roleInput && roleInput.value !== currentUserRole) {
+    if (isConfigured && roleInput && document.activeElement !== roleInput && roleInput.value !== currentUserRole) {
         roleInput.value = currentUserRole;
     }
 
     const adminNameInput = document.getElementById("set-admin-name");
-    const adminName = adminNameInput ? adminNameInput.value : "Admin User";
+    const adminName = (isConfigured && adminNameInput && adminNameInput.value) ? adminNameInput.value : (currentUser ? currentUser.name : "Guest User");
     updateAdminProfileDisplay(adminName, currentUserRole);
 
     const addBtn = document.getElementById("btn-open-add-machine");
@@ -63,6 +210,7 @@ let alertsHistory = [];
 let maintenanceHistory = [];
 
 document.addEventListener("DOMContentLoaded", () => {
+    initAuthSession();
     initClock();
     initNetworkMonitor();
     initNavigation();
@@ -71,6 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initSingleAnalyticsChart();
     initSettingsForm();
     initActions();
+    updateHeaderAuthDisplay();
     loadMachinesFromBackend();
     connectWebSocket();
 });
@@ -448,7 +597,36 @@ function renderAlertsLists() {
     }
 }
 
-// Render Maintenance History (Clean Empty State if none completed)
+// Maintenance Target Machine Dropdown Sync
+function renderMaintenanceMachineDropdown() {
+    const select = document.getElementById("maint-machine-select");
+    if (!select) return;
+
+    if (machineInventory.length === 0) {
+        select.innerHTML = `<option value="">No Machines Available</option>`;
+        return;
+    }
+
+    select.innerHTML = machineInventory.map(m => `
+        <option value="${m.id}" ${m.id === activeMachine.id ? 'selected' : ''}>${m.name} (${m.id})</option>
+    `).join("");
+}
+
+// Load & Render Maintenance History
+async function loadMaintenanceHistoryFromBackend() {
+    try {
+        const res = await fetch("/api/maintenance-history");
+        if (res.ok) {
+            const data = await res.json();
+            maintenanceHistory = data.history || [];
+            renderMaintenanceHistory();
+            renderMaintenanceHistoryTable();
+        }
+    } catch (err) {
+        console.error("Error loading maintenance history:", err);
+    }
+}
+
 function renderMaintenanceHistory() {
     const dashList = document.getElementById("dash-maint-history-list");
     if (!dashList) return;
@@ -463,6 +641,71 @@ function renderMaintenanceHistory() {
                 <span class="status-badge green">Completed</span>
             </div>
         `).join("");
+    }
+}
+
+function renderMaintenanceHistoryTable() {
+    const tbody = document.getElementById("maint-history-table-body");
+    if (!tbody) return;
+
+    if (maintenanceHistory.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-muted text-center p-12">No maintenance records logged yet.</td></tr>`;
+        return;
+    }
+
+    const isOperator = currentUserRole === "Operator";
+
+    tbody.innerHTML = maintenanceHistory.map(item => `
+        <tr>
+            <td>${item.time}</td>
+            <td><strong>${item.machine_id}</strong></td>
+            <td>${item.action}</td>
+            <td>${item.technician || 'Admin Technician'}</td>
+            <td><span class="status-badge green">Completed</span></td>
+            <td>
+                <button class="action-icon-btn delete-icon" onclick="deleteMaintenanceRecord('${item.id}')" title="${isOperator ? 'Operator Notice: Admin permissions required' : 'Delete Log Entry'}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+window.deleteMaintenanceRecord = async function (recordId) {
+    if (currentUserRole === "Operator") {
+        showToast("Operator Notice: Admin permissions required to delete maintenance records.");
+        return;
+    }
+    try {
+        const res = await fetch(`/api/maintenance-history/${recordId}`, { method: "DELETE" });
+        if (res.ok) {
+            const data = await res.json();
+            maintenanceHistory = data.history || [];
+            showToast("Maintenance record deleted.");
+            renderMaintenanceHistory();
+            renderMaintenanceHistoryTable();
+        }
+    } catch (err) {
+        console.error("Error deleting maintenance record:", err);
+    }
+};
+
+async function addMaintenanceHandler(machineId, action, technician) {
+    try {
+        const res = await fetch("/api/maintenance-history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ machine_id: machineId, action: action, technician: technician })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            maintenanceHistory = data.history || [];
+            showToast(`Logged maintenance record for ${machineId}.`);
+            renderMaintenanceHistory();
+            renderMaintenanceHistoryTable();
+        }
+    } catch (err) {
+        console.error("Error adding maintenance record:", err);
     }
 }
 
@@ -733,6 +976,17 @@ function initModals() {
         await addMaintenanceHandler(mId, act, tech);
         document.getElementById("maint-action-input").value = "";
     });
+
+    // Sign In Form Submit
+    document.getElementById("form-signin")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const sName = document.getElementById("signin-name")?.value.trim();
+        const sEmail = document.getElementById("signin-email")?.value.trim();
+        const sNum = document.getElementById("signin-number")?.value.trim() || "XXXXXXXXXX";
+        const sRole = document.getElementById("signin-role")?.value;
+
+        signInUser(sName, sEmail, sRole, sNum);
+    });
 }
 
 function openModal(modalId) {
@@ -746,13 +1000,38 @@ function closeModal(modalId) {
 // Settings Form
 function initSettingsForm() {
     const form = document.getElementById("form-settings");
-    const roleInput = document.getElementById("set-user-role");
-    const nameInput = document.getElementById("set-admin-name");
+    const logoutBtn = document.getElementById("btn-settings-logout");
 
     // Force light theme mode permanently
     document.documentElement.setAttribute("data-theme", "light");
 
+    function updateSettingsBadge(isSaved) {
+        const badge = document.getElementById("settings-status-badge");
+        if (!badge) return;
+        if (isSaved) {
+            badge.textContent = "Configured & Active";
+            badge.className = "pill-badge green";
+        } else {
+            badge.textContent = "Unsaved / Not Configured";
+            badge.className = "pill-badge yellow";
+        }
+    }
+
     async function loadSettings() {
+        const isSaved = localStorage.getItem("pm_settings_configured") === "true";
+        updateSettingsBadge(isSaved);
+
+        if (!isSaved) {
+            // Keep input fields empty to protect privacy on multi-user machine
+            const fields = ["set-admin-name", "set-admin-number", "set-admin-email", "set-company-name", "set-block-name", "set-user-role"];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+            updateAdminProfileDisplay("Guest User", "Not Configured");
+            return;
+        }
+
         try {
             const res = await fetch("/api/settings");
             if (res.ok) {
@@ -762,18 +1041,19 @@ function initSettingsForm() {
                     if (el && val !== undefined && val !== null) el.value = val;
                 };
 
-                setVal("set-admin-name", s.admin_name);
-                setVal("set-admin-number", s.admin_number);
-                setVal("set-admin-email", s.admin_email);
+                const useName = currentUser ? currentUser.name : (s.admin_name || "");
+                const useEmail = currentUser ? currentUser.email : (s.admin_email || "");
+                const useRole = currentUser ? currentUser.role : (s.role || "Admin");
+
+                setVal("set-admin-name", useName);
+                setVal("set-admin-number", s.admin_number || "XXXXXXXXXX");
+                setVal("set-admin-email", useEmail);
                 setVal("set-company-name", s.company_name);
                 setVal("set-block-name", s.block_name);
-                setVal("set-user-role", s.role);
+                setVal("set-user-role", useRole);
 
-                const loadedName = (nameInput && nameInput.value) ? nameInput.value : (s.admin_name || "Admin User");
-                const loadedRole = (roleInput && roleInput.value) ? roleInput.value : (s.role || "Admin");
-
-                applyUserRole(loadedRole);
-                updateAdminProfileDisplay(loadedName, loadedRole);
+                applyUserRole(useRole);
+                updateAdminProfileDisplay(useName, useRole);
             }
         } catch (err) {
             console.error("Failed to load settings:", err);
@@ -793,9 +1073,8 @@ function initSettingsForm() {
         const blockName = (document.getElementById("set-block-name")?.value || "").trim();
         const selectedRole = (document.getElementById("set-user-role")?.value || "").trim();
 
-        // Validation: If any details are missing, show unsuccessful toast and return
         if (!adminName || !adminNumber || !adminEmail || !companyName || !blockName || !selectedRole) {
-            showToast("System Settings changed unsuccessfully.");
+            showToast("Please complete all setting fields before saving.");
             return;
         }
 
@@ -817,20 +1096,36 @@ function initSettingsForm() {
             });
 
             if (res.ok) {
+                currentUser = { name: adminName, email: adminEmail, role: selectedRole, number: adminNumber };
+                isAuthenticated = true;
+                localStorage.setItem("pm_user_session", JSON.stringify(currentUser));
+                localStorage.setItem("pm_settings_configured", "true");
+                updateSettingsBadge(true);
+                updateHeaderAuthDisplay();
                 applyUserRole(selectedRole);
                 updateAdminProfileDisplay(adminName, selectedRole);
-                showToast("System Settings saved successfully.");
+                showToast("System Settings saved successfully! Profile activated.");
             } else {
-                showToast("System Settings changed unsuccessfully.");
+                showToast("System Settings save failed.");
             }
         } catch (err) {
             console.error("Error saving settings:", err);
-            showToast("System Settings changed unsuccessfully.");
+            showToast("System Settings save failed.");
         }
+    });
+
+    logoutBtn?.addEventListener("click", () => {
+        logoutUser();
     });
 }
 
-function initActions() { }
+function initActions() {
+    document.getElementById("btn-clear-active-alerts")?.addEventListener("click", () => {
+        activeAlerts = [];
+        renderAlertsLists();
+        showToast("All active alerts cleared.");
+    });
+}
 
 // Download Reports Helper
 window.downloadReport = function (reportType, format) {
