@@ -31,7 +31,6 @@ if __name__ == "__main__":
     prepare_models()
 
     print("\n[+] Starting FastAPI Async Backend on http://127.0.0.1:8000...")
-    print("    [+] Live Telemetry Stream: ws://127.0.0.1:8000/ws/telemetry")
     print("    [+] Interactive Dashboard: http://127.0.0.1:8000/\n")
     print("=" * 70)
 

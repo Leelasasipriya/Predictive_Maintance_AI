@@ -117,7 +117,7 @@ python app.py
 
 Open your browser and navigate to:
 - **Interactive Web Dashboard**: `http://127.0.0.1:8000/`
-- **Live Telemetry Stream**: `ws://127.0.0.1:8000/ws/telemetry`
+
 
 ---
 

@@ -8,9 +8,11 @@
     <!-- Google Fonts & Chart.js -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="/style.css?v=18">
+    <link rel="stylesheet" href="/style.css?v=19">
 </head>
 
 <body>
@@ -179,7 +181,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="kpi-value"><span id="val-health-score">95</span><span id="unit-health-score">%</span></div>
+                                <div class="kpi-value"><span id="val-health-score">95</span><span
+                                        id="unit-health-score">%</span></div>
                                 <div class="kpi-sub green" id="val-health-text">Excellent</div>
                             </div>
                         </div>
@@ -241,7 +244,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="kpi-value"><span id="val-failure-risk">18</span><span id="unit-failure-risk">%</span></div>
+                                <div class="kpi-value"><span id="val-failure-risk">18</span><span
+                                        id="unit-failure-risk">%</span></div>
                                 <div class="kpi-sub yellow" id="val-risk-level">Low Risk</div>
                             </div>
                         </div>
@@ -305,7 +309,8 @@
                         <div class="panel-card inner-card">
                             <div class="flex-row justify-between align-center mb-12">
                                 <h3>Current Active Alerts</h3>
-                                <button type="button" id="btn-clear-active-alerts" class="action-btn red-btn text-xs" style="padding: 4px 10px;">Clear All Alerts</button>
+                                <button type="button" id="btn-clear-active-alerts" class="action-btn red-btn text-xs"
+                                    style="padding: 4px 10px;">Clear All Alerts</button>
                             </div>
                             <div class="history-list mt-12" id="current-active-alerts-list">
                                 <!-- Populated dynamically when anomaly occurs -->
@@ -502,7 +507,8 @@
                     <!-- Add New Maintenance Log Entry Form -->
                     <div class="panel-card inner-card mb-20">
                         <h3>Add Maintenance Record</h3>
-                        <p class="text-muted text-sm mb-12">Log executed maintenance actions, work orders, or technician inspections.</p>
+                        <p class="text-muted text-sm mb-12">Log executed maintenance actions, work orders, or technician
+                            inspections.</p>
                         <form id="form-add-maintenance">
                             <div class="form-grid">
                                 <div class="form-group">
@@ -511,11 +517,14 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Technician Name</label>
-                                    <input type="text" id="maint-technician-input" placeholder="e.g. Admin Technician" class="dark-input" required>
+                                    <input type="text" id="maint-technician-input" placeholder="e.g. Admin Technician"
+                                        class="dark-input" required>
                                 </div>
                                 <div class="form-group full-width">
                                     <label>Maintenance Action / Work Performed</label>
-                                    <input type="text" id="maint-action-input" placeholder="e.g. Replaced motor bearings & aligned drive shaft" class="dark-input" required>
+                                    <input type="text" id="maint-action-input"
+                                        placeholder="e.g. Replaced motor bearings & aligned drive shaft"
+                                        class="dark-input" required>
                                 </div>
                             </div>
                             <div class="flex-row gap-16 mt-16">
@@ -556,41 +565,55 @@
                     <div class="panel-header mb-16">
                         <div>
                             <h2>General Settings</h2>
-                            <p class="text-muted">Configure application settings, company profile, and active user details.</p>
+                            <p class="text-muted">Configure application settings, company profile, and active user
+                                details.</p>
                         </div>
                         <span id="settings-status-badge" class="pill-badge yellow">Unsaved / Not Configured</span>
                     </div>
 
                     <div id="settings-privacy-notice" class="settings-status-banner mb-20">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="notice-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        <span><strong>Privacy Protection Active:</strong> Shared machine environment. Saved credentials are protected and will not be displayed on screen or sidebar until entered and saved for your session.</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="notice-icon">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span><strong>Privacy Protection Active:</strong> Shared machine environment. Saved credentials
+                            are protected and will not be displayed on screen or sidebar until entered and saved for
+                            your session.</span>
                     </div>
 
                     <form id="form-settings" class="settings-form" novalidate>
                         <div class="form-grid">
                             <div class="form-group">
                                 <label>Admin / User Name</label>
-                                <input type="text" id="set-admin-name" placeholder="Enter Full Name (e.g. Sasipriya)" required class="dark-input">
+                                <input type="text" id="set-admin-name" placeholder="Enter Full Name (e.g. Sasipriya)"
+                                    required class="dark-input">
                             </div>
                             <div class="form-group">
                                 <label>Phone Number</label>
-                                <input type="text" id="set-admin-number" placeholder="XXXXXXXXXX" required class="dark-input">
+                                <input type="text" id="set-admin-number" placeholder="XXXXXXXXXX" required
+                                    class="dark-input">
                             </div>
                             <div class="form-group">
                                 <label>Email Address</label>
-                                <input type="email" id="set-admin-email" placeholder="Enter Email (e.g. sasi@factory.ai)" required class="dark-input">
+                                <input type="email" id="set-admin-email"
+                                    placeholder="Enter Email (e.g. sasi@factory.ai)" required class="dark-input">
                             </div>
                             <div class="form-group">
                                 <label>Company Name</label>
-                                <input type="text" id="set-company-name" placeholder="Enter Company Name" class="dark-input">
+                                <input type="text" id="set-company-name" placeholder="Enter Company Name"
+                                    class="dark-input">
                             </div>
                             <div class="form-group">
                                 <label>Block / Department</label>
-                                <input type="text" id="set-block-name" placeholder="Enter Block or Department Name" class="dark-input">
+                                <input type="text" id="set-block-name" placeholder="Enter Block or Department Name"
+                                    class="dark-input">
                             </div>
                             <div class="form-group">
                                 <label>User System Role</label>
-                                <input type="text" id="set-user-role" placeholder="Enter Role (e.g. Machine Engineer, Admin, Operator)" class="dark-input">
+                                <input type="text" id="set-user-role"
+                                    placeholder="Enter Role (e.g. Machine Engineer, Admin, Operator)"
+                                    class="dark-input">
                             </div>
                         </div>
 
@@ -685,14 +708,16 @@
                 <button class="modal-close" data-close="modal-signin">✕</button>
             </div>
             <form id="form-signin">
-                <p class="text-muted text-sm mb-16">Enter your Admin Name and registered Email Address to access your workspace.</p>
+                <p class="text-muted text-sm mb-16">Enter your Admin Name and registered Email Address to access your
+                    workspace.</p>
                 <div class="form-group">
                     <label>Admin / User Name</label>
                     <input type="text" id="signin-name" placeholder="e.g. Sasipriya" required class="dark-input">
                 </div>
                 <div class="form-group mt-12">
                     <label>Email Address</label>
-                    <input type="email" id="signin-email" placeholder="e.g. sasipriyakatta59@gmail.com" required class="dark-input">
+                    <input type="email" id="signin-email" placeholder="e.g. sasipriyakatta59@gmail.com" required
+                        class="dark-input">
                 </div>
                 <div class="form-group mt-12">
                     <label>Mobile Number</label>

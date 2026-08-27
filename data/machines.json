@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "id": "MCH-13",
+    "name": "Milling machine",
+    "condition": "New Machine",
+    "type": "Horizontal Milling Machine"
+  }
+]
